@@ -1,0 +1,16 @@
+stations to enrich: 7197
+progress 500/7197, with_image=5
+progress 1000/7197, with_image=19
+progress 1500/7197, with_image=24
+progress 2000/7197, with_image=31
+progress 2500/7197, with_image=39
+progress 3000/7197, with_image=45
+progress 3500/7197, with_image=57
+progress 4000/7197, with_image=67
+progress 4500/7197, with_image=78
+progress 5000/7197, with_image=82
+progress 5500/7197, with_image=86
+progress 6000/7197, with_image=92
+progress 6500/7197, with_image=100
+progress 7000/7197, with_image=108
+DONE: 7197 stations, 111 with floor plan image

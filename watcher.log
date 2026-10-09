@@ -1,0 +1,7 @@
+[watcher] scrape finished at Fri Oct  9 04:51:33 PM +08 2026
+build: 7197 stations with guide / 877 without / 8074 total
+ -> data/station-guide.full.json
+ -> data/mapping.json
+To https://github.com/ooep/eki-info.git
+   a253d5e..a4f40d4  main -> main
+[watcher] push done at Fri Oct  9 04:52:11 PM +08 2026

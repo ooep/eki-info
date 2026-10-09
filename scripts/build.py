@@ -21,6 +21,12 @@ def cache_path(name):
     return os.path.join("cache", f"{h}_{safe}.json")
 
 
+def map_cache_path(name):
+    h = hashlib.md5(name.encode("utf-8")).hexdigest()[:10]
+    safe = re.sub(r"[^\w\-]", "_", name)
+    return os.path.join("cache_map", f"{h}_{safe}.json")
+
+
 def pick_record(records, operators):
     """多事业者共站时，优先选 operators 里命中的 section。"""
     if not records:
@@ -75,6 +81,19 @@ def main():
                 "sources": ["ecomo-rakuraku"],
                 "updatedAt": cache.get("fetchedAt", "")[:10],
             }
+            # overlay floor-plan image (with exits labeled) from cache_map
+            mcp = map_cache_path(name)
+            if os.path.exists(mcp):
+                try:
+                    md = json.load(open(mcp, encoding="utf-8"))
+                    fp = dict(entry.get("floorPlan") or {})
+                    if md.get("imageUrl"): fp["imageUrl"] = md["imageUrl"]
+                    if md.get("pdfUrl"): fp["pdfUrl"] = md["pdfUrl"]
+                    if md.get("mapPageUrl") and not fp.get("pageUrl"):
+                        fp["pageUrl"] = md["mapPageUrl"]
+                    entry["floorPlan"] = fp
+                except Exception:
+                    pass
             out["stations"][name] = entry
         mapping[name] = m
 
