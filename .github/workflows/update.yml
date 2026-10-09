@@ -1,0 +1,53 @@
+name: 全量更新车站指南数据
+
+# 手动触发：仓库页 Actions → 全量更新车站指南数据 → Run workflow
+# 也可每月 1 号 UTC 02:00 自动跑一次。
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 1 * *"
+
+permissions:
+  contents: write   # 允许把新生成的 data/ 提交回仓库
+
+concurrency:
+  group: eki-info-update
+  cancel-in-progress: false   # 全量抓取不中断
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360       # 全量 ~8074 站 × 0.6s ≈ 90 分钟，留 6h 余量
+    steps:
+      - name: 签出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 拉取网站车站主清单
+        run: python3 scripts/fetch_master.py
+
+      - name: 全量抓取 ecomo（断点续传；cache 不入库，每次全新抓）
+        run: python3 scripts/scrape.py --force
+
+      - name: 聚合输出
+        run: python3 scripts/build.py
+
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --staged --quiet; then
+            echo "无数据变化，跳过提交"
+          else
+            git commit -m "data: 全量更新 $(date -u +%Y-%m-%d)"
+            git push
+          fi
