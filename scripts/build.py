@@ -81,6 +81,15 @@ def main():
                 "sources": ["ecomo-rakuraku"],
                 "updatedAt": cache.get("fetchedAt", "")[:10],
             }
+            # normalize any relative /ecomo URL to absolute (avoid broken links on our site)
+            def _abs(u):
+                if u and isinstance(u, str) and u.startswith("/"):
+                    return "https://www.ecomo-rakuraku.jp" + u
+                return u
+            if isinstance(entry.get("floorPlan"), dict):
+                fp = dict(entry["floorPlan"])
+                fp["pageUrl"] = _abs(fp.get("pageUrl"))
+                entry["floorPlan"] = fp
             # overlay floor-plan image (with exits labeled) from cache_map
             mcp = map_cache_path(name)
             if os.path.exists(mcp):
@@ -91,6 +100,12 @@ def main():
                     if md.get("pdfUrl"): fp["pdfUrl"] = md["pdfUrl"]
                     if md.get("mapPageUrl") and not fp.get("pageUrl"):
                         fp["pageUrl"] = md["mapPageUrl"]
+                    # normalize relative URLs to absolute ecomo URLs
+                    def _abs(u):
+                        if u and isinstance(u, str) and u.startswith("/"):
+                            return "https://www.ecomo-rakuraku.jp" + u
+                        return u
+                    fp["pageUrl"] = _abs(fp.get("pageUrl"))
                     entry["floorPlan"] = fp
                 except Exception:
                     pass
