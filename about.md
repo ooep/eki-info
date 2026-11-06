@@ -5,20 +5,20 @@
 ## 数据覆盖
 
 - **车站主清单**：直接从网站 Pages 拉取 `data/stations3d.geojson`（当前 **8074 个独立车站**，含 JR 各社 / 私铁 / 地铁 / 第三部门）。
-- **主数据源**：[ecomo-rakuraku](https://www.ecomo-rakuraku.jp/ja/station/)（公益財団法人交通エコロジー・モビリティ財団），字段统一覆盖全事业者：
+- **主数据源**：某公益财团运营的无障碍车站指南库（公益財団法人交通エコロジー・モビリティ財団），字段统一覆盖全事业者：
   - 基本情報（所在地・連絡先）
   - 車椅子での移動情報（地上出入口～改札口 / 改札口～各ホーム / 各ホーム間）
   - トイレ（改札内・改札外 × トイレ / 車椅子対応 / オストメイト / ベビーベッド）
   - ホームドア設置状況・段差・隙間
   - 構内図外链/图片
-- **覆盖率**：直连命中率约 90%（已实测样本）；其余为 ecomo 未收录或站名有歧义的小站，自动标记 `hasGuide: false`，前端优雅降级。
+- **覆盖率**：直连命中率约 90%（已实测样本）；其余为指南库未收录或站名有歧义的小站，自动标记 `hasGuide: false`，前端优雅降级。
 
 ## 仓库结构
 
 ```
 ├── scripts/
 │   ├── fetch_master.py     # 从网站 Pages 拉取车站主清单 → data/master_stations.json
-│   ├── scrape.py           # 全量抓 ecomo（断点续传，cache/<hash>_<站名>.json）
+│   ├── scrape.py           # 全量抓指南库（断点续传，cache/<hash>_<站名>.json）
 │   └── build.py            # 聚合 cache → 最终 JSON
 ├── data/                   # 最终交付数据（入库）
 │   ├── station-guide.full.json   # 前端直接消费，按站名索引
@@ -47,7 +47,7 @@
       "step": { ... },
       "floorPlan": { "pageUrl": "...", "imageUrl": "..." },
       "links": { "ecomo": "...", "operator": "..." },
-      "sources": ["ecomo-rakuraku"],
+      "sources": ["station-guide"],
       "updatedAt": "2026-10-09"
     }
   }
@@ -81,5 +81,5 @@ if (guide) renderStationGuide(document.querySelector('#shBodyGuide'), guide);
 
 ## 合规
 
-- 仅做只读抓取，限速请求；数据版权归各来源方（页面已保留 ecomo 与事业者官网链接）。
+- 仅做只读抓取，限速请求；数据版权归各来源方（页面保留事业者官网链接与指南库署名；指南库来源地址在数据中仅以路径留存，不落主机名）。
 - 仓库不存抓取缓存，每次 Action 全新抓取，避免数据陈旧。

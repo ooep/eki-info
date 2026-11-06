@@ -27,6 +27,15 @@ def map_cache_path(name):
     return os.path.join("cache_map", f"{h}_{safe}.json")
 
 
+def _path_only(u):
+    """源地址脱敏：绝对 URL 剥掉 scheme+主机，仅保留路径；相对路径原样返回。"""
+    if u and isinstance(u, str):
+        m = re.match(r"^https?://[^/]+(/.*)$", u)
+        if m:
+            return m.group(1)
+    return u
+
+
 def pick_record(records, operators):
     """多事业者共站时，优先选 operators 里命中的 section。"""
     if not records:
@@ -43,7 +52,7 @@ def main():
     stations = json.load(open("data/master_stations.json", encoding="utf-8"))
     out = {"schema": "station-guide/v2",
            "generatedAt": time.strftime("%Y-%m-%d"),
-           "source": "ecomo-rakuraku (公益財団法人交通エコロジー・モビリティ財団)",
+           "source": "公益財団法人交通エコロジー・モビリティ財団（无障碍车站指南库）",
            "stations": {}}
     mapping = {}
     ok = miss = 0
@@ -58,7 +67,7 @@ def main():
             cache = json.load(open(cp, encoding="utf-8"))
             if cache.get("status") == "ok":
                 rec = pick_record(cache.get("records", []), st["operators"])
-                m["ecomoUrl"] = cache.get("ecomoUrl")
+                m["ecomoUrl"] = _path_only(cache.get("ecomoUrl"))
                 m["ecomoSlug"] = cache.get("ecomoSlug")
         if rec is None:
             miss += 1
@@ -76,19 +85,15 @@ def main():
                 "platform": rec.get("platform") or {},
                 "step": rec.get("step") or {},
                 "floorPlan": rec.get("floorPlan"),
-                "links": {"ecomo": cache.get("ecomoUrl"),
+                "links": {"ecomo": _path_only(cache.get("ecomoUrl")),
                           "operator": rec.get("operatorUrl")},
-                "sources": ["ecomo-rakuraku"],
+                "sources": ["station-guide"],
                 "updatedAt": cache.get("fetchedAt", "")[:10],
             }
-            # normalize any relative /ecomo URL to absolute (avoid broken links on our site)
-            def _abs(u):
-                if u and isinstance(u, str) and u.startswith("/"):
-                    return "https://www.ecomo-rakuraku.jp" + u
-                return u
+            # 源地址脱敏：不落上游主机名，仅保留路径部分
             if isinstance(entry.get("floorPlan"), dict):
                 fp = dict(entry["floorPlan"])
-                fp["pageUrl"] = _abs(fp.get("pageUrl"))
+                fp["pageUrl"] = _path_only(fp.get("pageUrl"))
                 entry["floorPlan"] = fp
             # overlay floor-plan image (with exits labeled) from cache_map
             mcp = map_cache_path(name)
@@ -96,16 +101,12 @@ def main():
                 try:
                     md = json.load(open(mcp, encoding="utf-8"))
                     fp = dict(entry.get("floorPlan") or {})
-                    if md.get("imageUrl"): fp["imageUrl"] = md["imageUrl"]
-                    if md.get("pdfUrl"): fp["pdfUrl"] = md["pdfUrl"]
+                    if md.get("imageUrl"): fp["imageUrl"] = _path_only(md["imageUrl"])
+                    if md.get("pdfUrl"): fp["pdfUrl"] = _path_only(md["pdfUrl"])
                     if md.get("mapPageUrl") and not fp.get("pageUrl"):
-                        fp["pageUrl"] = md["mapPageUrl"]
-                    # normalize relative URLs to absolute ecomo URLs
-                    def _abs(u):
-                        if u and isinstance(u, str) and u.startswith("/"):
-                            return "https://www.ecomo-rakuraku.jp" + u
-                        return u
-                    fp["pageUrl"] = _abs(fp.get("pageUrl"))
+                        fp["pageUrl"] = _path_only(md["mapPageUrl"])
+                    # 源地址脱敏：仅保留路径部分
+                    fp["pageUrl"] = _path_only(fp.get("pageUrl"))
                     entry["floorPlan"] = fp
                 except Exception:
                     pass
